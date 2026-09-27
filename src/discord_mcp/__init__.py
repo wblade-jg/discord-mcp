@@ -1,6 +1,6 @@
-from dbot.client import DiscordApiClient
-from dbot.config import load_config
-from dbot.models import Bot, Channel, MessageBulk, Server
+from discord_mcp.client import DiscordApiClient
+from discord_mcp.config import load_config
+from discord_mcp.models import Bot, Channel, MessageBulk, Server
 
 __all__ = [
     "Bot",

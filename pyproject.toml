@@ -1,7 +1,7 @@
 [project]
-name = "dbot"
+name = "discord-mcp"
 version = "0.1.0"
-description = "Add your description here"
+description = "Servidor MCP para Discord construido desde cero."
 readme = "README.md"
 authors = [
     { name = "wblade-jg", email = "juliangarzonalvarezwb9@gmail.com" }
@@ -21,7 +21,7 @@ dev = [
 ]
 
 [project.scripts]
-dbot = "dbot:main"
+discord-mcp = "discord_mcp:main"
 
 [build-system]
 requires = ["uv_build>=0.12.18,<0.13.0"]
