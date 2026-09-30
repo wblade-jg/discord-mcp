@@ -21,7 +21,7 @@ dev = [
 ]
 
 [project.scripts]
-discord-mcp = "discord_mcp:main"
+discord-mcp = "discord_mcp.main:main"
 
 [build-system]
 requires = ["uv_build>=0.12.18,<0.13.0"]
