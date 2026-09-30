@@ -1,4 +1,4 @@
-from discord_mcp.client import DiscordApiClient
+from discord_mcp.discord_api import DiscordApiClient
 from discord_mcp.config import load_config
 from discord_mcp.models import Bot, Channel, MessageBulk, Server
 
