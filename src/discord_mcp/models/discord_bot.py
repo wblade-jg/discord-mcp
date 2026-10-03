@@ -31,28 +31,3 @@ class Bot(BaseModel):
         for server in self.servers:
             if server.name == name:
                 return server
-
-
-class JsonRpcRequest(BaseModel):
-    jsonrpc: str
-    id: str | int
-    method: str
-    params: dict 
-
-
-class JsonRpcResponse(BaseModel):
-    jsonrpc: str
-    id: str | int
-    result: dict
-
-
-class JsonRpcError(BaseModel):
-    jsonrpc: str
-    id: str | int | None
-    
-    class ErrorType(BaseModel):
-        code: int
-        message: str
-
-    error: ErrorType
-

@@ -1,6 +1,6 @@
 import requests
 
-from discord_mcp.models import Channel, Server
+from discord_mcp.models.discord_bot import Channel, Server
 
 
 class DiscordApiClient:
