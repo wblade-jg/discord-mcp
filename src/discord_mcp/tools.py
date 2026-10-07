@@ -1,12 +1,84 @@
 import inspect
+from collections.abc import Callable
+from typing import Any
+
+from pydantic import BaseModel
+
+from discord_mcp.exceptions import ToolExecutionError
+
+
+class ExecuteToolRequest(BaseModel):
+    name: str
+    arguments: dict
+
+
+_PYTHON_TO_JSON_SCHEMA = {
+    str: "string",
+    int: "integer",
+    float: "number",
+    bool: "boolean",
+}
+
+
+class Parameter:
+    def __init__(self, name, kind, default, description):
+        self.name = name
+        self.type = kind
+        self.default = default
+        self.description = description
+
+    def to_schema(self):
+        return {
+            "type": _PYTHON_TO_JSON_SCHEMA.get(self.type, "string"),
+            "description": self.description,
+        }
+
+    def is_required(self):
+        return self.default is inspect.Parameter.empty
 
 
 class Tool:
-    def __init__(self, name: str, description: str, parameters: dict, title=""):
+    def __init__(
+        self,
+        name: str,
+        description: str,
+        function: Callable[..., Any],
+        title="",
+        parameters: list[Parameter] | None = None,
+    ):
         self.name = name
         self.title = title
         self.description = description
-        self.parameters = parameters
+        self.parameters = {parameter.name: parameter for parameter in (parameters or [])}
+        self.function = function
+
+    def to_dict(self):
+        return {
+            "name": self.name,
+            "title": self.title,
+            "description": self.description,
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    name: parameter.to_schema()
+                    for name, parameter in self.parameters.items()
+                },
+                "required": [
+                    name
+                    for name, parameter in self.parameters.items()
+                    if parameter.is_required()
+                ],
+            },
+        }
+
+    def execute(self, kwargs: dict[str, Any]):
+        sig = inspect.signature(self.function)
+        sig.bind(**kwargs)
+
+        try:
+            return self.function(**kwargs)
+        except Exception as e:
+            raise ToolExecutionError(str(e))
 
 
 def doc_tool_parser(doc: str):
@@ -25,7 +97,7 @@ def doc_tool_parser(doc: str):
             break
 
     if args_position is not None:
-        for line in lines[args_position + 1:]:
+        for line in lines[args_position + 1 :]:
             param_name, param_description = line.split(":")
             info["parameters"].update({param_name.strip(): param_description.strip()})
 
@@ -37,22 +109,24 @@ def tool(func):
     doc = inspect.getdoc(func)
 
     if doc is None:
-        #TODO: improve error handling
+        # TODO: improve error handling
         return
 
     formatted_doc = doc_tool_parser(doc)
 
     description = formatted_doc["description"]
-    parameters = {}
+    parameters = []
 
     for param_name, param in inspect.signature(func).parameters.items():
-        parameters.update({
-            param_name: {
-                "type": param.annotation,
-                "default": param.default,
-                "description": formatted_doc["parameters"][param_name]
-            }
-        })
-    tool = Tool(name, description, parameters)
+        parameters.append(
+            Parameter(
+                param_name,
+                param.annotation,
+                param.default,
+                formatted_doc["parameters"][param_name],
+            )
+        )
+
+    tool = Tool(name, description, parameters=parameters, function=func)
 
     return tool

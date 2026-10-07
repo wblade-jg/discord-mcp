@@ -7,9 +7,10 @@ from pydantic import ValidationError
 from discord_mcp.exceptions import (
     MissingProtocolVersionError,
     NotSupportedProtocolError,
+    ToolNotFoundError,
 )
 from discord_mcp.models.json_rpc import JsonRpcError, JsonRpcRequest
-from discord_mcp.tools import Tool
+from discord_mcp.tools import ExecuteToolRequest, Tool
 
 
 class McpServer:
@@ -19,7 +20,7 @@ class McpServer:
         self.__mcp_protocol_implementations = {}
         self.capabilities = {}
         self.__session_protocol = None
-    
+
     def get_session_protocol(self, request) -> Any:
         """
         Returns:
@@ -29,7 +30,7 @@ class McpServer:
             MissingProtocolVersionError: Si dentro del objeto request no se incluye una clave '*protocolVersion'
         """
         if self.__session_protocol is None:
-            self.establish_session_protocol(request) 
+            self.establish_session_protocol(request)
         return self.__session_protocol
 
     def establish_session_protocol(self, request):
@@ -43,52 +44,93 @@ class McpServer:
             raise MissingProtocolVersionError("Missing protocol version in request")
 
         if protocol_version not in self.get_supported_protocols():
-            raise NotSupportedProtocolError(f"Protocol version {protocol_version} is not supported")
+            raise NotSupportedProtocolError(
+                f"Protocol version {protocol_version} is not supported"
+            )
         self.__session_protocol = self.__mcp_protocol_implementations[protocol_version]
 
     def get_tools(self):
-        return self.capabilities.setdefault("tools", [])
+        return self.capabilities.setdefault("tools", {})
+
+    def get_tool(self, name):
+        return self.get_tools().get(name)
+
+    def get_capabilities(self):
+        return {capability: {} for capability in self.capabilities}
 
     def get_supported_protocols(self):
-        return list(self.__mcp_protocol_implementations.keys())   
+        return list(self.__mcp_protocol_implementations.keys())
 
     def add_implementation_protocol(self, protocol_implementation):
-        self.__mcp_protocol_implementations[protocol_implementation.protocol_version] = protocol_implementation
+        self.__mcp_protocol_implementations[
+            protocol_implementation.protocol_version
+        ] = protocol_implementation
 
     def add_tool(self, tool: Tool):
-        self.capabilities.setdefault("tools", []).append(tool)
-    
+        self.capabilities.setdefault("tools", {}).update({tool.name: tool})
+
     def add_resource(self, resource):
         self.capabilities.setdefault("resources", []).append(resource)
-    
+
     def add_prompt(self, prompt):
         self.capabilities.setdefault("prompts", []).append(prompt)
+
+    def execute_tool(self, tool_info: ExecuteToolRequest):
+        tool = self.get_tool(tool_info.name)
+
+        if tool is None:
+            raise ToolNotFoundError(tool_info.name)
+
+        return tool.execute(tool_info.arguments)
 
     def run(self):
         for line in sys.stdin:
             try:
                 data = json.loads(line)
             except json.JSONDecodeError:
-                print(JsonRpcError.error_from_code(-32600).model_dump_json(), flush=True)
+                print(
+                    JsonRpcError.error_from_code(-32600).model_dump_json(), flush=True
+                )
                 continue
 
-            try: 
+            try:
                 print(self.handle(data), flush=True)
 
             except NotSupportedProtocolError:
-                print(JsonRpcError.error_from_code(-32602, id=data["id"]).add_error_data({
-                                      "message": "Unavailable protocol",
-                                      "supportedVersions": self.get_supported_protocols()}).model_dump_json(), flush=True)
+                print(
+                    JsonRpcError.error_from_code(-32602, id=data["id"])
+                    .add_error_data(
+                        {
+                            "message": "Unavailable protocol",
+                            "supportedVersions": self.get_supported_protocols(),
+                        }
+                    )
+                    .model_dump_json(),
+                    flush=True,
+                )
 
             except MissingProtocolVersionError:
-                print(JsonRpcError.error_from_code(-32602, id=data["id"]).add_error_data({
-                    "message": "Missing protocol version in request"}).model_dump_json(), flush=True)
+                print(
+                    JsonRpcError.error_from_code(-32602, id=data["id"])
+                    .add_error_data({"message": "Missing protocol version in request"})
+                    .model_dump_json(),
+                    flush=True,
+                )
 
             except ValidationError:
                 if "id" not in data:
-                    print(JsonRpcError.error_from_code(-32602).model_dump_json(), flush=True)
-            
-                print(JsonRpcError.error_from_code(-32602, id=data["id"]).model_dump_json(), flush=True)
+                    print(
+                        JsonRpcError.error_from_code(-32602).model_dump_json(),
+                        flush=True,
+                    )
+                    continue
+
+                print(
+                    JsonRpcError.error_from_code(
+                        -32602, id=data["id"]
+                    ).model_dump_json(),
+                    flush=True,
+                )
 
     def handle(self, data: dict):
         """
@@ -111,4 +153,3 @@ def _find_key(dict, k):
             return value
         if isinstance(value, dict):
             return _find_key(value, k)
-
