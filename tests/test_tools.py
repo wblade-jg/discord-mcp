@@ -40,7 +40,9 @@ def mcp_server():
 
 def test_execute_tool(mcp_server):
     assert (
-        mcp_server.execute_tool(ExecuteToolRequest(name="dummy", arguments={"value": "pepe"}))
+        mcp_server.execute_tool(
+            ExecuteToolRequest(name="dummy", arguments={"value": "pepe"})
+        )
         == "tu valor es: pepe"
     )
 
@@ -53,9 +55,11 @@ def test_execute_tool_not_found(mcp_server):
 def test_execute_tool_missing_arguments(mcp_server):
     with pytest.raises(TypeError):
         mcp_server.execute_tool(ExecuteToolRequest(name="dummy", arguments={}))
-    
+
     with pytest.raises(TypeError):
-        mcp_server.execute_tool(ExecuteToolRequest(name="dummy", arguments={"pepe": "pepe"}))
+        mcp_server.execute_tool(
+            ExecuteToolRequest(name="dummy", arguments={"pepe": "pepe"})
+        )
 
 
 def test_execute_tool_internal_error(mcp_server):

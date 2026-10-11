@@ -49,7 +49,9 @@ class Tool:
         self.name = name
         self.title = title
         self.description = description
-        self.parameters = {parameter.name: parameter for parameter in (parameters or [])}
+        self.parameters = {
+            parameter.name: parameter for parameter in (parameters or [])
+        }
         self.function = function
 
     def to_dict(self):

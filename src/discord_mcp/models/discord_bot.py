@@ -3,9 +3,14 @@ from datetime import datetime
 from pydantic import BaseModel
 
 
+class Message(BaseModel):
+    content: str
+
+
 class MessageBulk(BaseModel):
-    messages: list[str]
-    fetched_at: datetime
+    messages: list[Message] | None = None
+    fetched_at: datetime | None = None
+    ttl: int = 5
 
 
 class Channel(BaseModel):
