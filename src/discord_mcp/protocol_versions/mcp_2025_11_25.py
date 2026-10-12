@@ -27,8 +27,7 @@ class Mcp20251125:
                     id=request.id,
                     result={
                         "tools": [
-                            tool.to_dict()
-                            for tool in mcp_server.get_tools().values()
+                            tool.to_dict() for tool in mcp_server.get_tools().values()
                         ]
                     },
                 ).model_dump_json()
@@ -45,9 +44,11 @@ class Mcp20251125:
                     ).model_dump_json()
 
                 except ToolNotFoundError as e:
-                    return JsonRpcError.error_from_code(
-                        -32602, id=request.id
-                    ).add_error_data({"Unknown tool": e.tool_name}).model_dump_json()
+                    return (
+                        JsonRpcError.error_from_code(-32602, id=request.id)
+                        .add_error_data({"Unknown tool": e.tool_name})
+                        .model_dump_json()
+                    )
 
                 except ToolExecutionError as e:
                     return JsonRpcResponse(
@@ -59,6 +60,8 @@ class Mcp20251125:
                     ).model_dump_json()
 
                 except TypeError as e:
-                    return JsonRpcError.error_from_code(
-                        -32602, id=request.id
-                    ).add_error_data({"message": str(e)}).model_dump_json()
+                    return (
+                        JsonRpcError.error_from_code(-32602, id=request.id)
+                        .add_error_data({"message": str(e)})
+                        .model_dump_json()
+                    )
