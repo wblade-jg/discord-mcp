@@ -2,6 +2,8 @@ import os
 
 from dotenv import load_dotenv
 
+from discord_mcp.exceptions import ConfigError
+
 load_dotenv()
 
 
@@ -10,10 +12,10 @@ class Config:
         self.bot_token = token
 
 
-def load_config():
+def load_config() -> Config:
     token = os.getenv("TOKEN")
 
     if not token:
-        raise ValueError("La variable de entorno 'TOKEN' no está configurada.")
+        raise ConfigError("environment variable 'TOKEN' is not configured")
 
     return Config(token)

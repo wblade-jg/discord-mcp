@@ -40,3 +40,9 @@ class NotFoundError(Exception):
         self.name = name
         self.message = f"{entity} not found: {name}"
         super().__init__(self.message)
+
+
+class ConfigError(Exception):
+    def __init__(self, message):
+        self.message = message
+        super().__init__(self.message)
