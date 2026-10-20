@@ -23,16 +23,3 @@ class Server(BaseModel):
     id: str
     name: str
     channels: list[Channel] | None = None
-
-
-class Bot(BaseModel):
-    token: str
-    servers: list[Server] | None = None
-
-    def get_server_by_name(self, name):
-        if self.servers is None:
-            return None
-
-        for server in self.servers:
-            if server.name == name:
-                return server

@@ -79,8 +79,8 @@ class Tool:
 
         try:
             return self.function(**kwargs)
-        except Exception as e:
-            raise ToolExecutionError(str(e))
+        except Exception as e:  # frontera: toda excepción de tool → ToolExecutionError
+            raise ToolExecutionError(str(e)) from e
 
 
 def doc_tool_parser(doc: str):

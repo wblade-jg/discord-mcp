@@ -5,6 +5,7 @@ build/
 dist/
 wheels/
 *.egg-info
+.hypothesis/
 
 .env
 
@@ -18,3 +19,7 @@ wheels/
 # Coverage
 .coverage
 htmlcov/
+
+# Kiro (metadata de ejecución, no documentación)
+.kiro/specs/*/.config.kiro
+.kiro/specs/*/tasks.meta.json
