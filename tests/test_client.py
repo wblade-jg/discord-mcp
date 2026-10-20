@@ -139,6 +139,17 @@ def test_401_fails_fast_no_retry(no_sleep):
     assert no_sleep == []
 
 
+def test_401_raises_invalid_token_message(no_sleep):
+    client = ScriptedClient([FakeResponse(401)])
+    wrapper = ResilientClientWrapper(client)
+
+    with pytest.raises(DiscordApiError, match="valid, unexpired bot token"):
+        wrapper.get("https://x/guilds")
+
+    assert len(client.calls) == 1
+    assert no_sleep == []
+
+
 def test_exhausts_retries_raises_discord_api_error(no_sleep):
     client = ScriptedClient([FakeResponse(503)] * 5)
     wrapper = ResilientClientWrapper(client, max_retries=3)
