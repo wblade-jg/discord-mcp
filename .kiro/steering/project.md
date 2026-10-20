@@ -16,7 +16,7 @@ Servidor MCP (Model Context Protocol) para Discord construido desde cero sobre s
 - Actualizar lockfile tras cambiar dependencias: `uv lock` (y commitear `uv.lock`)
 - Ejecutar el servidor: `uv run discord-mcp` (lee JSON-RPC línea a línea desde stdin)
 
-El CI (`.github/workflows/ci.yml`) solo ejecuta `uv run pytest tests`; ruff no corre en CI, pásalo localmente antes de commitear.
+El CI (`.github/workflows/ci.yml`) ejecuta `uv run ruff check`, `uv run ruff format --check`, `uv lock --check` y `uv run pytest tests`; los disparadores de push son ramas `feature/**`, `fix/**` y `docs/**`.
 
 ## Configuración
 - `TOKEN` (token del bot de Discord) se carga desde `.env` con `python-dotenv` (ver `.env.example`).
