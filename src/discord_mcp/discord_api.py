@@ -88,6 +88,11 @@ class ResilientClientWrapper:
                     if attempt > self.max_retries and wait_time <= self.max_delay:
                         raise DiscordApiError("Could not connect to Discord API") from e
                     continue
+                if status_code == 401:
+                    raise DiscordApiError(
+                        "Discord rejected the bot token (HTTP 401): "
+                        "check that TOKEN holds a valid, unexpired bot token"
+                    ) from e
                 raise DiscordApiError(f"Discord API error {status_code}") from e
 
     def _parse_retry_after(self, response) -> float | None:
