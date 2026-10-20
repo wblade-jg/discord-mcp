@@ -1,6 +1,6 @@
 import random
 import time
-from datetime import datetime
+from datetime import datetime, timezone
 
 import requests
 
@@ -29,7 +29,7 @@ class DiscordApiClient:
         )
         return MessageBulk(
             messages=[Message(**message) for message in response.json()],
-            fetched_at=datetime.now(),
+            fetched_at=datetime.now(timezone.utc),
         )
 
 

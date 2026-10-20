@@ -32,3 +32,11 @@ class RateLimitExceeded(ToolExecutionError):
     def __init__(self, retry_after: float):
         super().__init__(f"Rate limited, retry after {retry_after}s")
         self.retry_after = retry_after
+
+
+class NotFoundError(Exception):
+    def __init__(self, entity: str, name: str):
+        self.entity = entity
+        self.name = name
+        self.message = f"{entity} not found: {name}"
+        super().__init__(self.message)

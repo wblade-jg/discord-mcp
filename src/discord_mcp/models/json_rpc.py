@@ -5,7 +5,7 @@ class JsonRpcRequest(BaseModel):
     jsonrpc: str
     id: str | int
     method: str
-    params: dict
+    params: dict = {}
 
 
 class JsonRpcResponse(BaseModel):

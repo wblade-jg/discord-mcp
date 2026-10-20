@@ -5,6 +5,7 @@ from discord_mcp.exceptions import (
     MissingProtocolVersionError,
     NotSupportedProtocolError,
 )
+from discord_mcp.models.json_rpc import JsonRpcRequest
 from discord_mcp.server import McpServer
 
 
@@ -49,6 +50,19 @@ def test_unavailable_protocol(mcp_server):
 
 def test_missing_protocol_version(mcp_server):
     mock = {"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {}}
+
+    with pytest.raises(MissingProtocolVersionError):
+        mcp_server.handle(mock)
+
+
+def test_json_rpc_request_without_params_defaults_to_empty_dict():
+    request = JsonRpcRequest(jsonrpc="2.0", id=1, method="tools/list")
+
+    assert request.params == {}
+
+
+def test_first_request_without_params_raises_missing_protocol(mcp_server):
+    mock = {"jsonrpc": "2.0", "id": 1, "method": "tools/list"}
 
     with pytest.raises(MissingProtocolVersionError):
         mcp_server.handle(mock)
