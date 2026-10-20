@@ -21,7 +21,7 @@ uv lock                               # tras cambiar dependencias (commitear uv.
 uv run discord-mcp                    # ejecutar el servidor (lee stdin)
 ```
 
-CI (`.github/workflows/ci.yml`) solo ejecuta `uv run pytest tests`; pasa ruff localmente antes de commitear.
+CI (`.github/workflows/ci.yml`) ejecuta `uv run ruff check`, `uv run ruff format --check`, `uv lock --check` y `uv run pytest tests`; en local basta con `uv run ruff check` y `uv run ruff format` antes de commitear.
 
 ## Arquitectura
 
