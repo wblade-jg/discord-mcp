@@ -2,7 +2,7 @@ import pytest
 import requests
 
 import discord_mcp.discord_api as api_module
-from discord_mcp.discord_api import ResilientClientWrapper
+from discord_mcp.discord_api import DiscordApiClient, ResilientClientWrapper
 from discord_mcp.exceptions import DiscordApiError, RateLimitExceeded
 
 
@@ -160,3 +160,17 @@ def test_exhausts_retries_raises_discord_api_error(no_sleep):
     # 1 intento inicial + 3 reintentos
     assert len(client.calls) == 4
     assert no_sleep == [0.5, 0.5, 0.5]
+
+
+def test_get_channels_parses_type_field(no_sleep):
+    payload = [
+        {"id": "c1", "name": "general", "type": 0},
+        {"id": "c2", "name": "info", "type": 4},
+    ]
+    client = ScriptedClient([FakeResponse(200, json_data=payload)])
+    api = DiscordApiClient(base_url="https://x/api/v10", headers={})
+    api.http_client = client
+
+    channels = api.get_channels("s1")
+
+    assert [(c.name, c.type) for c in channels] == [("general", 0), ("info", 4)]
