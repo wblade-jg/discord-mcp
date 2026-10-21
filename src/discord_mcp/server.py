@@ -93,6 +93,14 @@ class McpServer:
                 )
                 continue
 
+            if not isinstance(data, dict):
+                # JSON valido pero no-objeto (lista, cadena, numero, null):
+                # **data en handle() lanzaria TypeError y mataria el servidor
+                print(
+                    JsonRpcError.error_from_code(-32600).model_dump_json(), flush=True
+                )
+                continue
+
             try:
                 print(self.handle(data), flush=True)
 
