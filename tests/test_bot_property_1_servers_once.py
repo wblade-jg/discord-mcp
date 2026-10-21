@@ -7,12 +7,7 @@ from hypothesis import given, settings
 from hypothesis import strategies as st
 
 from discord_mcp.bot import Bot
-from discord_mcp.models.discord_bot import Server
-from tests.fakes import FakeDiscordClient
-
-
-def make_servers(names):
-    return [Server(id=f"id-{i}", name=name) for i, name in enumerate(names)]
+from tests.fakes import FakeDiscordClient, make_servers
 
 
 @given(

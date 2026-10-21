@@ -7,18 +7,8 @@ from hypothesis import given, settings
 from hypothesis import strategies as st
 
 from discord_mcp.bot import Bot
-from discord_mcp.exceptions import DiscordApiError, RateLimitExceeded
 from discord_mcp.models.discord_bot import Channel, Message, MessageBulk, Server
-from tests.fakes import FakeDiscordClient, MutableClock
-
-
-def error_strategy():
-    return st.sampled_from(
-        [
-            DiscordApiError("boom"),
-            RateLimitExceeded(1.0),
-        ]
-    )
+from tests.fakes import FakeDiscordClient, MutableClock, error_strategy
 
 
 @given(
@@ -37,7 +27,6 @@ def test_failed_refetch_serves_stale(error, ttl, overshoot):
     )
     channel = Channel(id="c1", name="general", messages=stale)
     fake.set_servers([Server(id="s1", name="guild", channels=[channel])])
-    fake.set_channels([channel])
     fake.set_messages(error)
     bot = Bot(discord_client=fake, clock=clock)
     bot.get_servers()
