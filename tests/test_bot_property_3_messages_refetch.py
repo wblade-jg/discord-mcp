@@ -23,7 +23,6 @@ def populated_bot(fake, clock, messages, fetched_at, ttl):
     )
     channel = Channel(id="c1", name="general", messages=bulk)
     fake.set_servers([Server(id="s1", name="guild", channels=[channel])])
-    fake.set_channels([channel])
     fake.set_messages(MessageBulk(messages=[Message(content="fresh")]))
     bot = Bot(discord_client=fake, clock=clock)
     bot.get_servers()
