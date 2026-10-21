@@ -16,8 +16,10 @@ Expone:
 
 from datetime import datetime, timedelta, timezone
 
+from hypothesis import strategies as st
+
 from discord_mcp.exceptions import DiscordApiError, RateLimitExceeded
-from discord_mcp.models.discord_bot import Channel, MessageBulk, Server
+from discord_mcp.models.discord_bot import Channel, Message, MessageBulk, Server
 
 # Una respuesta programada es un valor de retorno o una instancia de una
 # excepción de la API de Discord que el fake lanza al invocar el método.
@@ -150,3 +152,39 @@ class MutableClock:
     def set(self, moment: datetime) -> None:
         """Fija el reloj a un instante concreto."""
         self._current = moment
+
+
+# --- Builders compartidos -------------------------------------------------
+
+
+def make_server(server_id="s1", name="guild", channels=None):
+    return Server(id=server_id, name=name, channels=channels)
+
+
+def make_channel(channel_id="c1", name="general", messages=None):
+    return Channel(id=channel_id, name=name, messages=messages)
+
+
+def make_bulk(content="hola", ttl=5, fetched_at=None):
+    return MessageBulk(
+        messages=[Message(content=content)], fetched_at=fetched_at, ttl=ttl
+    )
+
+
+def make_servers(names):
+    return [Server(id=f"id-{i}", name=name) for i, name in enumerate(names)]
+
+
+def make_channels(names):
+    return [Channel(id=f"c-{i}", name=name) for i, name in enumerate(names)]
+
+
+def error_strategy():
+    """Errores de la API de Discord muestreables con hypothesis."""
+    return st.sampled_from(
+        [
+            DiscordApiError("boom"),
+            RateLimitExceeded(1.0),
+            RateLimitExceeded(30.0),
+        ]
+    )
