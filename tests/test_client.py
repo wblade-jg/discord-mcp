@@ -67,29 +67,16 @@ def test_retry_on_503_then_success(no_sleep):
     assert no_sleep == [0.5, 0.5]
 
 
-def test_retry_on_connection_error_then_success(no_sleep):
-    client = ScriptedClient(
-        [
-            requests.exceptions.ConnectionError("boom"),
-            FakeResponse(200),
-        ]
-    )
-    wrapper = ResilientClientWrapper(client)
-
-    response = wrapper.get("https://x/guilds")
-
-    assert response.status_code == 200
-    assert len(client.calls) == 2
-    assert no_sleep == [0.5]
-
-
-def test_retry_on_timeout_then_success(no_sleep):
-    client = ScriptedClient(
-        [
-            requests.exceptions.Timeout("slow"),
-            FakeResponse(200),
-        ]
-    )
+@pytest.mark.parametrize(
+    "error",
+    [
+        requests.exceptions.ConnectionError("boom"),
+        requests.exceptions.Timeout("slow"),
+    ],
+    ids=["connection-error", "timeout"],
+)
+def test_retry_on_connection_errors_then_success(no_sleep, error):
+    client = ScriptedClient([error, FakeResponse(200)])
     wrapper = ResilientClientWrapper(client)
 
     response = wrapper.get("https://x/guilds")
@@ -128,19 +115,8 @@ def test_429_too_long_raises_rate_limit_exceeded(no_sleep):
     assert no_sleep == []
 
 
-def test_401_fails_fast_no_retry(no_sleep):
+def test_401_fails_fast_with_invalid_token_message(no_sleep):
     client = ScriptedClient([FakeResponse(401), FakeResponse(200)])
-    wrapper = ResilientClientWrapper(client)
-
-    with pytest.raises(DiscordApiError):
-        wrapper.get("https://x/guilds")
-
-    assert len(client.calls) == 1
-    assert no_sleep == []
-
-
-def test_401_raises_invalid_token_message(no_sleep):
-    client = ScriptedClient([FakeResponse(401)])
     wrapper = ResilientClientWrapper(client)
 
     with pytest.raises(DiscordApiError, match="valid, unexpired bot token"):
@@ -148,6 +124,42 @@ def test_401_raises_invalid_token_message(no_sleep):
 
     assert len(client.calls) == 1
     assert no_sleep == []
+
+
+def test_non_retryable_status_fails_fast(no_sleep):
+    client = ScriptedClient([FakeResponse(404), FakeResponse(200)])
+    wrapper = ResilientClientWrapper(client)
+
+    with pytest.raises(DiscordApiError, match="404"):
+        wrapper.get("https://x/guilds")
+
+    assert len(client.calls) == 1
+    assert no_sleep == []
+
+
+def test_429_exhausting_retries_with_short_wait_raises_api_error(no_sleep):
+    # 429 con espera corta: al agotar reintentos -> DiscordApiError, no RateLimitExceeded
+    client = ScriptedClient([FakeResponse(429, headers={"Retry-After": "2"})] * 5)
+    wrapper = ResilientClientWrapper(client, max_retries=3)
+
+    with pytest.raises(DiscordApiError):
+        wrapper.get("https://x/guilds")
+
+    assert len(client.calls) == 4
+    assert no_sleep == [2.0, 2.0, 2.0]
+
+
+@pytest.mark.parametrize("header_value", [None, "not-a-number"])
+def test_429_falls_back_to_backoff_when_retry_after_invalid(no_sleep, header_value):
+    headers = {} if header_value is None else {"Retry-After": header_value}
+    client = ScriptedClient([FakeResponse(429, headers=headers), FakeResponse(200)])
+    wrapper = ResilientClientWrapper(client)
+
+    response = wrapper.get("https://x/guilds")
+
+    assert response.status_code == 200
+    # backoff stubado: uniform siempre devuelve 0.5
+    assert no_sleep == [0.5]
 
 
 def test_exhausts_retries_raises_discord_api_error(no_sleep):
