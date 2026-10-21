@@ -16,6 +16,8 @@ class MessageBulk(BaseModel):
 class Channel(BaseModel):
     id: str
     name: str
+    # Discord: 0 = GUILD_TEXT; default compat con constructores sin type
+    type: int = 0
     messages: MessageBulk | None = None
 
 

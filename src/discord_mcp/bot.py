@@ -5,6 +5,9 @@ from discord_mcp.discord_api import DiscordApiClient
 from discord_mcp.exceptions import DiscordApiError, NotFoundError, RateLimitExceeded
 from discord_mcp.models.discord_bot import Channel, MessageBulk, Server
 
+# Tipo de canal de texto en la API de Discord (GUILD_TEXT)
+TEXT_CHANNEL_TYPE = 0
+
 
 def _utc_now() -> datetime:
     """Reloj por defecto del Bot: hora actual en UTC (consistente con MutableClock)."""
@@ -44,7 +47,9 @@ class Bot:
         server = self._resolve_server(server_name)
         if server.channels is None:
             # propaga en fallo (6.1); server.channels solo se asigna tras éxito
-            server.channels = self._client.get_channels(server.id)
+            # y solo con canales de texto: la caché queda ya filtrada
+            channels = self._client.get_channels(server.id)
+            server.channels = [c for c in channels if c.type == TEXT_CHANNEL_TYPE]
         return server.channels
 
     def get_messages(self, server_name: str, channel_name: str) -> MessageBulk:

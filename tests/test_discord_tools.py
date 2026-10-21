@@ -106,18 +106,39 @@ def test_get_servers_returns_formatted_text(mcp_server, fake):
 
     result = call_tool(mcp_server, "get_servers", {})
 
-    assert result["result"]["content"][0]["text"] == "guild (s1), other (s2)"
+    assert result["result"]["content"][0]["text"] == (
+        "name: guild, id: s1\nname: other, id: s2"
+    )
     assert "isError" not in result["result"]
 
 
 def test_get_channels_returns_formatted_text(mcp_server, fake):
     fake.set_servers([Server(id="s1", name="guild")])
-    fake.set_channels([Channel(id="c1", name="general")])
+    fake.set_channels([Channel(id="c1", name="general", type=0)])
     call_tool(mcp_server, "get_servers", {})
 
     result = call_tool(mcp_server, "get_channels", {"server_name": "guild"})
 
-    assert result["result"]["content"][0]["text"] == "general (c1)"
+    assert result["result"]["content"][0]["text"] == "name: general, id: c1"
+
+
+def test_get_channels_excludes_non_text_channels(mcp_server, fake):
+    fake.set_servers([Server(id="s1", name="guild")])
+    fake.set_channels(
+        [
+            Channel(id="c1", name="general", type=0),
+            Channel(id="c2", name="rules", type=0),
+            Channel(id="c3", name="voice", type=2),
+            Channel(id="c4", name="info", type=4),
+        ]
+    )
+    call_tool(mcp_server, "get_servers", {})
+
+    result = call_tool(mcp_server, "get_channels", {"server_name": "guild"})
+
+    assert result["result"]["content"][0]["text"] == (
+        "name: general, id: c1\nname: rules, id: c2"
+    )
 
 
 def test_get_messages_returns_joined_contents(mcp_server, fake):

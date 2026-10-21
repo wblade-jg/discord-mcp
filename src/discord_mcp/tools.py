@@ -90,13 +90,18 @@ def doc_tool_parser(doc: str):
 
     lines = doc.splitlines()
 
-    info["description"] = lines[0]
-
     args_position = None
     for line in lines:
         if line.startswith("Args:"):
             args_position = lines.index(line)
             break
+
+    # La descripción es todo el párrafo inicial hasta "Args:" (o el final),
+    # unido en una sola línea para el cliente MCP.
+    description_end = args_position if args_position is not None else len(lines)
+    info["description"] = " ".join(
+        line.strip() for line in lines[:description_end] if line.strip()
+    )
 
     if args_position is not None:
         for line in lines[args_position + 1 :]:
@@ -106,29 +111,38 @@ def doc_tool_parser(doc: str):
     return info
 
 
-def tool(func):
-    name = func.__name__
-    doc = inspect.getdoc(func)
+def tool(func=None, *, title=""):
+    def build(target):
+        name = target.__name__
+        doc = inspect.getdoc(target)
 
-    if doc is None:
-        # TODO: improve error handling
-        return
+        if doc is None:
+            # TODO: improve error handling
+            return
 
-    formatted_doc = doc_tool_parser(doc)
+        formatted_doc = doc_tool_parser(doc)
 
-    description = formatted_doc["description"]
-    parameters = []
+        parameters = []
 
-    for param_name, param in inspect.signature(func).parameters.items():
-        parameters.append(
-            Parameter(
-                param_name,
-                param.annotation,
-                param.default,
-                formatted_doc["parameters"][param_name],
+        for param_name, param in inspect.signature(target).parameters.items():
+            parameters.append(
+                Parameter(
+                    param_name,
+                    param.annotation,
+                    param.default,
+                    formatted_doc["parameters"][param_name],
+                )
             )
+
+        return Tool(
+            name,
+            formatted_doc["description"],
+            title=title,
+            parameters=parameters,
+            function=target,
         )
 
-    tool = Tool(name, description, parameters=parameters, function=func)
-
-    return tool
+    if func is None:
+        # uso como decorador con argumentos: @tool(title="...")
+        return build
+    return build(func)

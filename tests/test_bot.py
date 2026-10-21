@@ -132,6 +132,26 @@ def test_first_channels_fetch_failure_propagates(bot, fake):
     assert bot.get_servers()[0].channels is None
 
 
+def test_channels_only_include_text_type_and_cache_is_filtered(bot, fake):
+    fake.set_servers([make_server()])
+    fake.set_channels(
+        [
+            Channel(id="c1", name="general", type=0),
+            Channel(id="c2", name="voice", type=2),
+            Channel(id="c3", name="info", type=4),
+        ]
+    )
+    bot.get_servers()
+
+    first = bot.get_channels("guild")
+    second = bot.get_channels("guild")
+
+    assert [c.name for c in first] == ["general"]
+    assert first is second
+    assert len(fake.calls["get_channels"]) == 1
+    assert [c.name for c in bot.get_servers()[0].channels] == ["general"]
+
+
 # --- Mensajes -------------------------------------------------------------
 
 
